@@ -10,7 +10,7 @@ export default function LoginScreen() {
   const [formData, setFormData] = useState({ email: "", password: "" });
 
   const handleLogin = () => {
-    navigation.navigate("Dashboard" as never);
+    navigation.navigate("DashboardFamiliar" as never);
   };
 
   return (

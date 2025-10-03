@@ -9,7 +9,7 @@ export default function ElderlyJoin() {
 
   const handleJoin = () => {
     // Aquí puedes manejar la lógica de unión con código de familia
-    navigation.navigate("Dashboard" as never);
+    navigation.navigate("DashboardElderly" as never); // 👈 redirige al Dashboard de adultos mayores
   };
 
   return (
