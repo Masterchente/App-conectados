@@ -15,7 +15,10 @@ import NotasScreen from "./src/screens/NotasScreen";
 import NotasFamiliarScreen from "./src/screens/NotasFamiliarScreen";
 import ResumenFamiliarScreen from "./src/screens/ResumenFamiliarScreen";
 import DiarioScreen from "./src/screens/DiarioScreen";
-
+import { GaleriaProvider } from "./src/context/GaleriaContext";
+import GaleriaScreen from "./src/screens/GaleriaScreen";
+import ChatbotScreen from "./src/screens/ChatbotScreen";
+import ChatFamiliarScreen from "./src/screens/ChatFamiliarScreen";
 
 export type RootStackParamList = {
   Splash: undefined;
@@ -30,13 +33,19 @@ export type RootStackParamList = {
   NotasFamiliar: undefined;
   ResumenFamiliar: undefined;
   Diario: undefined;
+  Galeria: undefined;
+  Chatbot: undefined;
+  ChatFamiliar: undefined;
+
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
 export default function App() {
   return (
+
     <RecordatoriosProvider>
+      <GaleriaProvider>
       <NavigationContainer>
         <Stack.Navigator
           initialRouteName="Splash"
@@ -57,9 +66,13 @@ export default function App() {
           <Stack.Screen name="NotasFamiliar" component={NotasFamiliarScreen} />
           <Stack.Screen name="ResumenFamiliar" component={ResumenFamiliarScreen} />
           <Stack.Screen name="Diario" component={DiarioScreen} />
+          <Stack.Screen name="Galeria" component={GaleriaScreen} />
+          <Stack.Screen name="Chatbot" component={ChatbotScreen} />
+          <Stack.Screen name="ChatFamiliar" component={ChatFamiliarScreen} />
 
         </Stack.Navigator>
-      </NavigationContainer>
-    </RecordatoriosProvider>
+       </NavigationContainer>
+  </GaleriaProvider>
+</RecordatoriosProvider>
   );
 }

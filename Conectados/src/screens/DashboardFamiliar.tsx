@@ -49,10 +49,15 @@ export default function DashboardFamiliar() {
 
           {/* Cards */}
           <View style={styles.actionsGrid}>
-            <TouchableOpacity style={styles.card}>
+            
+            <TouchableOpacity
+              style={styles.card}
+              onPress={() => navigation.navigate("ChatFamiliar" as never)}
+            >
               <Ionicons name="chatbubble-ellipses" size={32} color="#2C3E50" />
-              <Text style={styles.cardText}>CHAT</Text>
+              <Text style={styles.cardText}>CHAT </Text>
             </TouchableOpacity>
+
 
             <TouchableOpacity
               style={styles.card}
@@ -71,10 +76,10 @@ export default function DashboardFamiliar() {
             </TouchableOpacity>
 
 
-            <TouchableOpacity style={styles.card}>
+            <TouchableOpacity style={styles.card} onPress={() => navigation.navigate("Galeria" as never)}>
               <Ionicons name="images" size={32} color="#2C3E50" />
               <Text style={styles.cardText}>GALERÍA</Text>
-            </TouchableOpacity>
+              </TouchableOpacity>
 
             {/* Botón Recordatorios */}
             <TouchableOpacity

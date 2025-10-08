@@ -41,10 +41,11 @@ export default function DashboardElderly() {
 
           {/* Cards */}
           <View style={styles.actionsGrid}>
-            <TouchableOpacity style={styles.card}>
-              <Ionicons name="chatbubble-ellipses" size={32} color="#2C3E50" />
-              <Text style={styles.cardText}>CHATBOT</Text>
-            </TouchableOpacity>
+            <TouchableOpacity style={styles.card} onPress={() => navigation.navigate("Chatbot" as never)}>
+            <Ionicons name="chatbubble-ellipses" size={32} color="#2C3E50" />
+            <Text style={styles.cardText}>CHATBOT</Text>
+          </TouchableOpacity>
+
 
             <TouchableOpacity
               style={styles.card}
@@ -63,10 +64,11 @@ export default function DashboardElderly() {
               <Text style={styles.cardText}>NOTAS</Text>
             </TouchableOpacity>
 
-            <TouchableOpacity style={styles.card}>
-              <Ionicons name="images" size={32} color="#2C3E50" />
-              <Text style={styles.cardText}>GALERÍA</Text>
+            <TouchableOpacity style={styles.card} onPress={() => navigation.navigate("Galeria" as never)}>
+            <Ionicons name="images" size={32} color="#2C3E50" />
+            <Text style={styles.cardText}>GALERÍA</Text>
             </TouchableOpacity>
+
 
             {/* Botón Recordatorios */}
             <TouchableOpacity
