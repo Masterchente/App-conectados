@@ -1,5 +1,4 @@
-// src/screens/DashboardElderly.tsx
-import React, { useState } from "react";
+import React from "react";
 import {
   View,
   Text,
@@ -10,13 +9,12 @@ import {
   SafeAreaView,
 } from "react-native";
 import { Ionicons, MaterialIcons } from "@expo/vector-icons";
+import { useNavigation } from "@react-navigation/native";
+import { useRecordatorios } from "../context/RecordatoriosContext";
 
 export default function DashboardElderly() {
-  const [reminders] = useState([
-    { id: 1, text: "Recordatorio 1" },
-    { id: 2, text: "Recordatorio 2" },
-    { id: 3, text: "Recordatorio 3" },
-  ]);
+  const navigation = useNavigation();
+  const { recordatorios } = useRecordatorios(); // ✅ Recordatorios globales compartidos
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -48,12 +46,19 @@ export default function DashboardElderly() {
               <Text style={styles.cardText}>CHATBOT</Text>
             </TouchableOpacity>
 
-            <TouchableOpacity style={styles.card}>
-              <MaterialIcons name="article" size={32} color="#2C3E50" />
-              <Text style={styles.cardText}>RESUMEN</Text>
+            <TouchableOpacity
+              style={styles.card}
+              onPress={() => navigation.navigate("Diario" as never)}
+            >
+              <MaterialIcons name="menu-book" size={32} color="#2C3E50" />
+              <Text style={styles.cardText}>DIARIO</Text>
             </TouchableOpacity>
-
-            <TouchableOpacity style={styles.card}>
+                
+            {/* 🔹 Botón que navega a Notas */}
+            <TouchableOpacity
+              style={styles.card}
+              onPress={() => navigation.navigate("Notas" as never)}
+            >
               <MaterialIcons name="note" size={32} color="#2C3E50" />
               <Text style={styles.cardText}>NOTAS</Text>
             </TouchableOpacity>
@@ -63,23 +68,34 @@ export default function DashboardElderly() {
               <Text style={styles.cardText}>GALERÍA</Text>
             </TouchableOpacity>
 
-            <TouchableOpacity style={[styles.card, { width: "100%" }]}>
+            {/* Botón Recordatorios */}
+            <TouchableOpacity
+              style={[styles.card, { width: "100%" }]}
+              onPress={() => navigation.navigate("Recordatorios" as never)}
+            >
               <Ionicons name="time" size={32} color="#2C3E50" />
               <Text style={styles.cardText}>RECORDATORIOS</Text>
             </TouchableOpacity>
           </View>
 
-          {/* Recordatorios */}
+          {/* Recordatorios actuales */}
           <View style={styles.remindersBox}>
             <View style={styles.reminderHeader}>
               <Ionicons name="time" size={20} color="#2C3E50" />
               <Text style={styles.reminderTitle}>Recordatorios actuales</Text>
             </View>
-            {reminders.map((r) => (
-              <Text key={r.id} style={styles.reminderText}>
-                • {r.text}
+
+            {recordatorios.length === 0 ? (
+              <Text style={styles.reminderText}>
+                No hay recordatorios todavía.
               </Text>
-            ))}
+            ) : (
+              recordatorios.map((r) => (
+                <Text key={r.id} style={styles.reminderText}>
+                  • {r.text} ({r.time})
+                </Text>
+              ))
+            )}
           </View>
 
           {/* Ondas decorativas */}
@@ -196,8 +212,8 @@ const styles = StyleSheet.create({
     position: "absolute",
     width: "100%",
     height: 40,
-    backgroundColor: "#00D98E", // Verde WhatsApp
-    opacity: .5,
+    backgroundColor: "#25D366", // Verde WhatsApp oficial
+    opacity: 0.5,
     borderTopLeftRadius: 100,
     borderTopRightRadius: 100,
   },

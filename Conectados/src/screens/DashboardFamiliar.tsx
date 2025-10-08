@@ -1,5 +1,4 @@
-// src/screens/DashboardFamiliar.tsx
-import React, { useState } from "react";
+import React from "react";
 import {
   View,
   Text,
@@ -11,14 +10,11 @@ import {
 } from "react-native";
 import { Ionicons, MaterialIcons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
+import { useRecordatorios } from "../context/RecordatoriosContext";
 
 export default function DashboardFamiliar() {
   const navigation = useNavigation();
-  const [reminders] = useState([
-    { id: 1, text: "Recordatorio 1" },
-    { id: 2, text: "Recordatorio 2" },
-    { id: 3, text: "Recordatorio 3" },
-  ]);
+  const { recordatorios } = useRecordatorios(); // ✅ Usa recordatorios globales
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -55,18 +51,25 @@ export default function DashboardFamiliar() {
           <View style={styles.actionsGrid}>
             <TouchableOpacity style={styles.card}>
               <Ionicons name="chatbubble-ellipses" size={32} color="#2C3E50" />
-              <Text style={styles.cardText}>CHATBOT</Text>
+              <Text style={styles.cardText}>CHAT</Text>
             </TouchableOpacity>
 
-            <TouchableOpacity style={styles.card}>
+            <TouchableOpacity
+              style={styles.card}
+              onPress={() => navigation.navigate("ResumenFamiliar" as never)}
+            >
               <MaterialIcons name="article" size={32} color="#2C3E50" />
               <Text style={styles.cardText}>RESUMEN</Text>
             </TouchableOpacity>
 
-            <TouchableOpacity style={styles.card}>
+            <TouchableOpacity
+              style={styles.card}
+              onPress={() => navigation.navigate("NotasFamiliar" as never)}
+            >
               <MaterialIcons name="note" size={32} color="#2C3E50" />
               <Text style={styles.cardText}>NOTAS</Text>
             </TouchableOpacity>
+
 
             <TouchableOpacity style={styles.card}>
               <Ionicons name="images" size={32} color="#2C3E50" />
@@ -74,18 +77,21 @@ export default function DashboardFamiliar() {
             </TouchableOpacity>
 
             {/* Botón Recordatorios */}
-            <TouchableOpacity style={[styles.card, { width: "100%" }]}>
+            <TouchableOpacity
+              style={[styles.card, { width: "100%" }]}
+              onPress={() => navigation.navigate("Recordatorios" as never)} // 👈 Navega al módulo
+            >
               <Ionicons name="time" size={32} color="#2C3E50" />
               <Text style={styles.cardText}>RECORDATORIOS</Text>
             </TouchableOpacity>
           </View>
 
-          {/* Recordatorios con fondo verde */}
+          {/* Recordatorios actuales */}
           <Text style={styles.sectionTitle}>Recordatorios actuales</Text>
           <View style={styles.remindersBox}>
-            {reminders.map((r) => (
+            {recordatorios.map((r) => (
               <Text key={r.id} style={styles.reminderText}>
-                • {r.text}
+                • {r.text} ({r.time})
               </Text>
             ))}
           </View>
