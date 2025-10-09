@@ -10,13 +10,17 @@ export default function LoginScreen() {
   const [formData, setFormData] = useState({ email: "", password: "" });
 
   const handleLogin = () => {
-    navigation.navigate("Dashboard" as never);
+    navigation.navigate("DashboardFamiliar" as never);
   };
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
       <View style={styles.card}>
-        <Image source={require("../../assets/logo-conectados.png")} style={styles.logo} resizeMode="contain" />
+        <Image
+          source={require("../../assets/logo-conectados.png")}
+          style={styles.logo}
+          resizeMode="contain"
+        />
         <Text style={styles.title}>Logeate</Text>
 
         <TextInput
@@ -34,20 +38,36 @@ export default function LoginScreen() {
             onChangeText={(text) => setFormData({ ...formData, password: text })}
             style={[styles.input, { flex: 1 }]}
           />
-          <TouchableOpacity onPress={() => setShowPassword(!showPassword)} style={styles.eyeIcon}>
-            <Ionicons name={showPassword ? "eye-off" : "eye"} size={20} color="#7F8C8D" />
+          <TouchableOpacity
+            onPress={() => setShowPassword(!showPassword)}
+            style={styles.eyeIcon}
+          >
+            <Ionicons
+              name={showPassword ? "eye-off" : "eye"}
+              size={20}
+              color="#7F8C8D"
+            />
           </TouchableOpacity>
         </View>
 
+        {/* Botón de entrar */}
         <TouchableOpacity onPress={handleLogin} style={styles.button}>
           <Text style={styles.buttonText}>Entrar</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity onPress={() => navigation.navigate("Register" as never)} style={styles.button}>
+        {/* Botón de registrarse */}
+        <TouchableOpacity
+          onPress={() => navigation.navigate("Register" as never)}
+          style={styles.button}
+        >
           <Text style={styles.buttonText}>Registrate</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity onPress={() => navigation.navigate("ElderlyJoin" as never)} style={styles.button}>
+        {/* Botón soy un adulto mayor */}
+        <TouchableOpacity
+          onPress={() => navigation.navigate("ElderlyJoin" as never)}
+          style={styles.button}
+        >
           <Text style={styles.buttonText}>Soy un adulto mayor</Text>
         </TouchableOpacity>
       </View>
