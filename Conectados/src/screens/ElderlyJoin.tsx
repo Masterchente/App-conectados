@@ -1,4 +1,6 @@
 // src/screens/ElderlyJoin.tsx
+import { Alert } from "react-native";
+import { supabase } from "../lib/supabaseClient";
 import React, { useState } from "react";
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Image } from "react-native";
 import { useNavigation } from "@react-navigation/native";
@@ -7,10 +9,23 @@ export default function ElderlyJoin() {
   const navigation = useNavigation();
   const [familyCode, setFamilyCode] = useState("");
 
-  const handleJoin = () => {
-    // Aquí puedes manejar la lógica de unión con código de familia
-    navigation.navigate("DashboardElderly" as never); // 👈 redirige al Dashboard de adultos mayores
-  };
+  const handleJoin = async () => {
+  const { data, error } = await supabase
+    .from("usuarios")
+    .select("*")
+    .eq("codigo_familia", familyCode)
+    .eq("rol", "adulto_mayor")
+    .single();
+
+  if (error || !data) {
+    Alert.alert("Código incorrecto", "No se encontró adulto mayor con ese código.");
+    return;
+  }
+
+  Alert.alert("Bienvenido", `Hola ${data.nombre} 👵`);
+  navigation.navigate("DashboardElderly" as never);
+};
+
 
   return (
     <View style={styles.container}>
