@@ -1,4 +1,5 @@
-import React from "react";
+// src/screens/DashboardFamiliar.tsx
+import React, { useEffect, useState } from "react";
 import {
   View,
   Text,
@@ -6,20 +7,59 @@ import {
   StyleSheet,
   ScrollView,
   Image,
-  SafeAreaView,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons, MaterialIcons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { useRecordatorios } from "../context/RecordatoriosContext";
+import { supabase } from "../lib/supabaseClient";
 
 export default function DashboardFamiliar() {
   const navigation = useNavigation();
-  const { recordatorios } = useRecordatorios(); // ✅ Usa recordatorios globales
+  const { recordatorios } = useRecordatorios();
+  const [nombreFamilia, setNombreFamilia] = useState<string | null>(null);
+  const [tieneFamilia, setTieneFamilia] = useState<boolean>(false);
+
+  useEffect(() => {
+    const fetchFamily = async () => {
+      try {
+        const { data: auth } = await supabase.auth.getUser();
+        const email = auth?.user?.email;
+        if (!email) return;
+
+        // 1️⃣ Buscar usuario actual
+        const { data: usuario } = await supabase
+          .from("usuarios")
+          .select("codigo_familia")
+          .eq("correo", email)
+          .single();
+
+        if (!usuario?.codigo_familia) return;
+
+        setTieneFamilia(true);
+
+        // 2️⃣ Buscar familia directamente por el código
+        const { data: familia } = await supabase
+          .from("familias")
+          .select("nombre_adulto_mayor")
+          .eq("codigo", usuario.codigo_familia)
+          .single();
+
+        if (familia?.nombre_adulto_mayor) {
+          console.log("✅ Adulto mayor:", familia.nombre_adulto_mayor);
+          setNombreFamilia(familia.nombre_adulto_mayor);
+        }
+      } catch (err) {
+        console.error("🚨 Error cargando familia:", err);
+      }
+    };
+
+    fetchFamily();
+  }, []);
 
   return (
     <SafeAreaView style={styles.safeArea}>
       <ScrollView contentContainerStyle={styles.container}>
-        {/* Header */}
         <View style={styles.header}>
           <View style={styles.logoRow}>
             <Image
@@ -29,35 +69,38 @@ export default function DashboardFamiliar() {
             />
             <Text style={styles.logoText}>Conectados</Text>
           </View>
-
           <TouchableOpacity style={styles.avatar}>
             <Ionicons name="person" size={16} color="#fff" />
           </TouchableOpacity>
         </View>
 
-        {/* Main Content */}
         <View style={styles.content}>
+          {nombreFamilia && (
+            <Text style={styles.familyLabel}>
+              👨‍👩‍👧 Familia de{" "}
+              <Text style={{ fontWeight: "bold" }}>{nombreFamilia}</Text>
+            </Text>
+          )}
+
           <Text style={styles.title}>Principal Familiar</Text>
 
-          {/* Botón de unirse */}
-          <TouchableOpacity
-            style={styles.joinButton}
-            onPress={() => navigation.navigate("ElderlyJoin" as never)}
-          >
-            <Text style={styles.joinText}>Unirse a una familia →</Text>
-          </TouchableOpacity>
+          {!tieneFamilia && (
+            <TouchableOpacity
+              style={styles.joinButton}
+              onPress={() => navigation.navigate("FamilyJoin" as never)}
+            >
+              <Text style={styles.joinText}>Unirse a una familia →</Text>
+            </TouchableOpacity>
+          )}
 
-          {/* Cards */}
           <View style={styles.actionsGrid}>
-            
             <TouchableOpacity
               style={styles.card}
               onPress={() => navigation.navigate("ChatFamiliar" as never)}
             >
               <Ionicons name="chatbubble-ellipses" size={32} color="#2C3E50" />
-              <Text style={styles.cardText}>CHAT </Text>
+              <Text style={styles.cardText}>CHAT</Text>
             </TouchableOpacity>
-
 
             <TouchableOpacity
               style={styles.card}
@@ -75,23 +118,23 @@ export default function DashboardFamiliar() {
               <Text style={styles.cardText}>NOTAS</Text>
             </TouchableOpacity>
 
-
-            <TouchableOpacity style={styles.card} onPress={() => navigation.navigate("Galeria" as never)}>
+            <TouchableOpacity
+              style={styles.card}
+              onPress={() => navigation.navigate("Galeria" as never)}
+            >
               <Ionicons name="images" size={32} color="#2C3E50" />
               <Text style={styles.cardText}>GALERÍA</Text>
-              </TouchableOpacity>
+            </TouchableOpacity>
 
-            {/* Botón Recordatorios */}
             <TouchableOpacity
               style={[styles.card, { width: "100%" }]}
-              onPress={() => navigation.navigate("Recordatorios" as never)} // 👈 Navega al módulo
+              onPress={() => navigation.navigate("Recordatorios" as never)}
             >
               <Ionicons name="time" size={32} color="#2C3E50" />
               <Text style={styles.cardText}>RECORDATORIOS</Text>
             </TouchableOpacity>
           </View>
 
-          {/* Recordatorios actuales */}
           <Text style={styles.sectionTitle}>Recordatorios actuales</Text>
           <View style={styles.remindersBox}>
             {recordatorios.map((r) => (
@@ -100,12 +143,6 @@ export default function DashboardFamiliar() {
               </Text>
             ))}
           </View>
-
-          {/* Ondas decorativas */}
-          <View style={styles.waveBox}>
-            <View style={styles.wave1} />
-            <View style={styles.wave2} />
-          </View>
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -113,15 +150,8 @@ export default function DashboardFamiliar() {
 }
 
 const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: "#F8F9FA",
-  },
-  container: {
-    backgroundColor: "#F8F9FA",
-    flexGrow: 1,
-    paddingBottom: 50,
-  },
+  safeArea: { flex: 1, backgroundColor: "#F8F9FA" },
+  container: { flexGrow: 1, backgroundColor: "#F8F9FA", paddingBottom: 50 },
   header: {
     backgroundColor: "#fff",
     flexDirection: "row",
@@ -130,19 +160,9 @@ const styles = StyleSheet.create({
     alignItems: "center",
     elevation: 2,
   },
-  logoRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-  },
-  logo: {
-    width: 40,
-    height: 40,
-  },
-  logoText: {
-    color: "#7F8C8D",
-    fontSize: 12,
-  },
+  logoRow: { flexDirection: "row", alignItems: "center", gap: 8 },
+  logo: { width: 40, height: 40 },
+  logoText: { color: "#7F8C8D", fontSize: 12 },
   avatar: {
     width: 32,
     height: 32,
@@ -151,10 +171,12 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  content: {
-    padding: 16,
-    maxWidth: 500,
-    alignSelf: "center",
+  content: { padding: 16, maxWidth: 500, alignSelf: "center" },
+  familyLabel: {
+    textAlign: "center",
+    color: "#2C3E50",
+    marginBottom: 10,
+    fontSize: 16,
   },
   title: {
     fontSize: 20,
@@ -170,10 +192,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginBottom: 20,
   },
-  joinText: {
-    fontWeight: "bold",
-    color: "#2C3E50",
-  },
+  joinText: { fontWeight: "bold", color: "#2C3E50" },
   actionsGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
@@ -191,47 +210,12 @@ const styles = StyleSheet.create({
     borderColor: "#E5E7EB",
     elevation: 2,
   },
-  cardText: {
-    marginTop: 8,
-    fontWeight: "bold",
-    color: "#2C3E50",
-  },
-  sectionTitle: {
-    fontWeight: "bold",
-    marginVertical: 15,
-    color: "#2C3E50",
-  },
+  cardText: { marginTop: 8, fontWeight: "bold", color: "#2C3E50" },
+  sectionTitle: { fontWeight: "bold", marginVertical: 15, color: "#2C3E50" },
   remindersBox: {
-    backgroundColor: "#00D98E", // Verde WhatsApp
+    backgroundColor: "#00D98E",
     borderRadius: 12,
     padding: 15,
   },
-  reminderText: {
-    color: "#fff",
-    marginBottom: 5,
-  },
-  waveBox: {
-    height: 80,
-    position: "relative",
-    marginTop: 20,
-  },
-  wave1: {
-    position: "absolute",
-    width: "100%",
-    height: 40,
-    backgroundColor: "#25D366", // Verde WhatsApp oficial
-    opacity: 0.5,
-    borderTopLeftRadius: 100,
-    borderTopRightRadius: 100,
-  },
-  wave2: {
-    position: "absolute",
-    width: "100%",
-    height: 40,
-    top: 20,
-    backgroundColor: "#4A9FD8", // Azul que combina
-    opacity: 0.3,
-    borderTopLeftRadius: 100,
-    borderTopRightRadius: 100,
-  },
+  reminderText: { color: "#fff", marginBottom: 5 },
 });

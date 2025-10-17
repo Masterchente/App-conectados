@@ -1,4 +1,5 @@
 // src/screens/RegisterElderlyScreen.tsx
+import { generarCodigoFamilia } from "../utils/generarCodigoFamilia";
 import { supabase } from "../lib/supabaseClient";
 import React, { useState } from "react";
 import {
@@ -18,6 +19,7 @@ export default function RegisterElderlyScreen() {
   const navigation = useNavigation();
   const [formData, setFormData] = useState({
     nombre: "",
+    email: "",
     edad: "",
     telefono: "",
     direccion: "",
@@ -25,54 +27,83 @@ export default function RegisterElderlyScreen() {
   });
   const [showPassword, setShowPassword] = useState(false);
 
-const handleRegister = async () => {
-  if (!formData.nombre || !formData.password) {
-    Alert.alert("Campos incompletos", "Por favor llena todos los campos obligatorios.");
-    return;
-  }
+  const handleRegister = async () => {
+    if (!formData.nombre || !formData.password) {
+      Alert.alert("Campos incompletos", "Por favor llena todos los campos obligatorios.");
+      return;
+    }
 
-  // Aquí pide el código de familia
-  Alert.prompt(
-    "Código Familiar",
-    "Introduce el código que te dio tu familiar:",
-    async (codigo) => {
-      const { data: familia, error } = await supabase
-        .from("familias")
-        .select("*")
-        .eq("codigo", codigo)
-        .single();
+    // 1️⃣ Crear usuario en auth
+    const emailFinal =
+      formData.email.trim() !== ""
+        ? formData.email.trim()
+        : `${formData.nombre.replace(/\s+/g, "")}@adulto.com`;
 
-      if (error || !familia) {
-        Alert.alert("Código inválido", "Verifica el código familiar.");
-        return;
-      }
+    const { data: authRes, error: authErr } = await supabase.auth.signUp({
+      email: emailFinal,
+      password: formData.password,
+    });
 
-      // Crea usuario anónimo (sin email)
-      const { data: anonUser, error: anonError } = await supabase.auth.signUp({
-        email: `${formData.nombre.replace(/\s+/g, "")}@adulto.com`,
-        password: formData.password,
-      });
+    if (authErr || !authRes.user) {
+      Alert.alert("Error", authErr?.message ?? "No se pudo crear el usuario.");
+      return;
+    }
 
-      if (anonError) {
-        Alert.alert("Error", anonError.message);
-        return;
-      }
+    const userId = authRes.user.id;
 
-      await supabase.from("usuarios").insert([
+    // 2️⃣ Insertar en usuarios
+    const { error: userErr } = await supabase.from("usuarios").insert([
+      {
+        id: userId,
+        nombre: formData.nombre,
+        correo: emailFinal,
+        rol: "adulto_mayor",
+        telefono: formData.telefono || null,
+      },
+    ]);
+
+    if (userErr) {
+      Alert.alert("Error", `No se pudo guardar el perfil: ${userErr.message}`);
+      return;
+    }
+
+    // 3️⃣ Generar código único y crear familia (con nombre_adulto_mayor)
+    let codigoFamilia = generarCodigoFamilia();
+    let famErr;
+
+    for (let i = 0; i < 3; i++) {
+      const { error } = await supabase.from("familias").insert([
         {
-          id: anonUser.user?.id,
-          nombre: formData.nombre,
-          rol: "adulto_mayor",
-          codigo_familia: codigo,
+          codigo: codigoFamilia,
+          created_by: userId,
+          nombre_adulto_mayor: formData.nombre, // ✅ se guarda el nombre del adulto mayor
         },
       ]);
-
-      Alert.alert("✅ Registro exitoso", "Adulto mayor vinculado correctamente.");
-      navigation.navigate("Login" as never);
+      famErr = error;
+      if (!error) break;
+      if (!String(error.message).includes("duplicate")) break;
+      codigoFamilia = generarCodigoFamilia();
     }
-  );
-};
 
+    if (famErr) {
+      Alert.alert("Error", `No se pudo crear la familia: ${famErr.message}`);
+      return;
+    }
+
+    // 4️⃣ Vincular el código a su usuario
+    await supabase.from("usuarios").update({ codigo_familia: codigoFamilia }).eq("id", userId);
+
+    Alert.alert(
+      "✅ Registro exitoso",
+      `Tu código de familia es: ${codigoFamilia}\n\nGuárdalo, tus familiares lo usarán para unirse.`,
+      [
+        {
+          text: "OK",
+          onPress: () => navigation.navigate("Login" as never),
+        },
+      ]
+    );
+  };
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
@@ -91,30 +122,35 @@ const handleRegister = async () => {
         <TextInput
           placeholder="Nombre completo"
           value={formData.nombre}
-          onChangeText={(text) => setFormData({ ...formData, nombre: text })}
+          onChangeText={(t) => setFormData({ ...formData, nombre: t })}
           style={styles.input}
         />
-
+        <TextInput
+          placeholder="Correo electrónico (opcional)"
+          keyboardType="email-address"
+          autoCapitalize="none"
+          value={formData.email}
+          onChangeText={(t) => setFormData({ ...formData, email: t })}
+          style={styles.input}
+        />
         <TextInput
           placeholder="Edad"
           keyboardType="numeric"
           value={formData.edad}
-          onChangeText={(text) => setFormData({ ...formData, edad: text })}
+          onChangeText={(t) => setFormData({ ...formData, edad: t })}
           style={styles.input}
         />
-
         <TextInput
           placeholder="Teléfono"
           keyboardType="phone-pad"
           value={formData.telefono}
-          onChangeText={(text) => setFormData({ ...formData, telefono: text })}
+          onChangeText={(t) => setFormData({ ...formData, telefono: t })}
           style={styles.input}
         />
-
         <TextInput
           placeholder="Dirección"
           value={formData.direccion}
-          onChangeText={(text) => setFormData({ ...formData, direccion: text })}
+          onChangeText={(t) => setFormData({ ...formData, direccion: t })}
           style={styles.input}
         />
 
@@ -123,18 +159,11 @@ const handleRegister = async () => {
             placeholder="Contraseña"
             secureTextEntry={!showPassword}
             value={formData.password}
-            onChangeText={(text) => setFormData({ ...formData, password: text })}
+            onChangeText={(t) => setFormData({ ...formData, password: t })}
             style={[styles.input, { flex: 1 }]}
           />
-          <TouchableOpacity
-            onPress={() => setShowPassword(!showPassword)}
-            style={styles.eyeIcon}
-          >
-            <Ionicons
-              name={showPassword ? "eye-off" : "eye"}
-              size={20}
-              color="#7F8C8D"
-            />
+          <TouchableOpacity onPress={() => setShowPassword(!showPassword)} style={styles.eyeIcon}>
+            <Ionicons name={showPassword ? "eye-off" : "eye"} size={20} color="#7F8C8D" />
           </TouchableOpacity>
         </View>
 
@@ -159,18 +188,8 @@ const styles = StyleSheet.create({
     padding: 20,
     elevation: 6,
   },
-  backButton: {
-    position: "absolute",
-    top: 20,
-    left: 20,
-    zIndex: 10,
-  },
-  logo: {
-    width: 100,
-    height: 100,
-    alignSelf: "center",
-    marginBottom: 20,
-  },
+  backButton: { position: "absolute", top: 20, left: 20, zIndex: 10 },
+  logo: { width: 100, height: 100, alignSelf: "center", marginBottom: 20 },
   title: {
     fontSize: 22,
     fontWeight: "bold",
@@ -188,14 +207,8 @@ const styles = StyleSheet.create({
     marginBottom: 15,
     fontSize: 14,
   },
-  passwordContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  eyeIcon: {
-    position: "absolute",
-    right: 15,
-  },
+  passwordContainer: { flexDirection: "row", alignItems: "center" },
+  eyeIcon: { position: "absolute", right: 15 },
   button: {
     backgroundColor: "#00D98E",
     borderRadius: 12,
@@ -203,9 +216,5 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginTop: 10,
   },
-  buttonText: {
-    color: "#fff",
-    fontWeight: "bold",
-    fontSize: 16,
-  },
+  buttonText: { color: "#fff", fontWeight: "bold", fontSize: 16 },
 });

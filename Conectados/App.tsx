@@ -20,6 +20,8 @@ import GaleriaScreen from "./src/screens/GaleriaScreen";
 import ChatbotScreen from "./src/screens/ChatbotScreen";
 import ChatFamiliarScreen from "./src/screens/ChatFamiliarScreen";
 import RegisterElderlyScreen from "./src/screens/RegisterElderlyScreen";
+import FamilyJoinScreen from "./src/screens/FamilyJoinScreen";
+
 
 export type RootStackParamList = {
   Splash: undefined;
@@ -38,7 +40,7 @@ export type RootStackParamList = {
   Chatbot: undefined;
   ChatFamiliar: undefined;
   RegisterElderly: undefined;
-
+  FamilyJoin: undefined;
 
 };
 
@@ -73,6 +75,7 @@ export default function App() {
           <Stack.Screen name="Chatbot" component={ChatbotScreen} />
           <Stack.Screen name="ChatFamiliar" component={ChatFamiliarScreen} />
           <Stack.Screen name="RegisterElderly" component={RegisterElderlyScreen} />
+          <Stack.Screen name="FamilyJoin" component={FamilyJoinScreen} />
 
 
         </Stack.Navigator>
