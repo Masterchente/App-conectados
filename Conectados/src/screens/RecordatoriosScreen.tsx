@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import {
   SafeAreaView,
   View,
@@ -7,18 +7,85 @@ import {
   StyleSheet,
   ScrollView,
   Image,
+  Alert,
+  ActivityIndicator,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
-import { useRecordatorios } from "../context/RecordatoriosContext"; // ✅ Importa el contexto
+import { supabase } from "../lib/supabaseClient";
 
 export default function RecordatoriosScreen() {
   const navigation = useNavigation();
-  const { recordatorios } = useRecordatorios(); // ✅ Obtenemos los recordatorios globales
+  const [recordatorios, setRecordatorios] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  // 🔁 Cargar recordatorios desde Supabase al entrar
+  useEffect(() => {
+    const fetchRecordatorios = async () => {
+      try {
+        setLoading(true);
+
+        // Obtener usuario actual
+        const { data: auth } = await supabase.auth.getUser();
+        let userId = auth?.user?.id;
+
+        // Si no hay sesión activa, buscar en usuarios
+        if (!userId) {
+          const { data: sessionData } = await supabase.auth.getSession();
+          const email = sessionData?.session?.user?.email;
+          if (email) {
+            const { data: userDb } = await supabase
+              .from("usuarios")
+              .select("id")
+              .eq("correo", email)
+              .single();
+            if (userDb) userId = userDb.id;
+          }
+        }
+
+        if (!userId) {
+          Alert.alert("Error", "No se encontró un usuario activo.");
+          return;
+        }
+
+        // Consultar recordatorios de ese usuario
+        const { data, error } = await supabase
+          .from("recordatorios")
+          .select("id, texto, fecha")
+          .eq("usuario_id", userId)
+          .order("fecha", { ascending: true });
+
+        if (error) {
+          console.error("❌ Error cargando recordatorios:", error);
+          Alert.alert("Error", "No se pudieron cargar los recordatorios.");
+        } else {
+          setRecordatorios(data || []);
+        }
+      } catch (e) {
+        console.error("⚠️ Error general:", e);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchRecordatorios();
+  }, []);
+
+  // 🗑 Eliminar recordatorio
+  const handleDelete = async (id: number) => {
+    try {
+      const { error } = await supabase.from("recordatorios").delete().eq("id", id);
+      if (error) throw error;
+      setRecordatorios((prev) => prev.filter((r) => r.id !== id));
+    } catch (err) {
+      Alert.alert("Error", "No se pudo eliminar el recordatorio.");
+      console.error("❌ Error eliminando recordatorio:", err);
+    }
+  };
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      {/* Header estilo Dashboard */}
+      {/* HEADER */}
       <View style={styles.header}>
         <View style={styles.logoRow}>
           <Image
@@ -29,51 +96,50 @@ export default function RecordatoriosScreen() {
           <Text style={styles.logoText}>Conectados</Text>
         </View>
 
-        <TouchableOpacity
-          style={styles.avatar}
-          onPress={() => navigation.goBack()}
-        >
+        <TouchableOpacity style={styles.avatar} onPress={() => navigation.goBack()}>
           <Ionicons name="arrow-back" size={18} color="#fff" />
         </TouchableOpacity>
       </View>
 
       <ScrollView contentContainerStyle={styles.container}>
         <Text style={styles.title}>RECORDATORIOS</Text>
-        <Text style={styles.subText}>Para que no olvides.</Text>
+        <Text style={styles.subText}>Tus recordatorios guardados 💚</Text>
 
-        {/* Lista de recordatorios activos */}
-        <View style={styles.reminderList}>
-          {recordatorios.length === 0 ? (
-            <Text style={styles.noReminders}>No hay recordatorios todavía.</Text>
-          ) : (
-            recordatorios.map((r) => (
+        {loading ? (
+          <ActivityIndicator size="large" color="#4A9FD8" style={{ marginTop: 40 }} />
+        ) : recordatorios.length === 0 ? (
+          <Text style={styles.noReminders}>No tienes recordatorios aún.</Text>
+        ) : (
+          recordatorios.map((r) => {
+            const fecha = new Date(r.fecha);
+            const fechaStr = fecha.toLocaleDateString("es-MX", {
+              weekday: "long",
+              day: "2-digit",
+              month: "long",
+            });
+            const horaStr = fecha.toLocaleTimeString("es-MX", {
+              hour: "2-digit",
+              minute: "2-digit",
+            });
+
+            return (
               <View key={r.id} style={styles.reminderCard}>
                 <View style={styles.reminderInfo}>
-                  <Ionicons name="notifications" size={20} color="#2C3E50" />
-                  <View>
-                    <Text style={styles.reminderText}>{r.text}</Text>
-                    <Text style={styles.reminderTime}>{r.time}</Text>
+                  <Ionicons name="notifications" size={22} color="#2C3E50" />
+                  <View style={{ marginLeft: 10 }}>
+                    <Text style={styles.reminderText}>{r.texto}</Text>
+                    <Text style={styles.reminderTime}>
+                      {fechaStr} a las {horaStr}
+                    </Text>
                   </View>
                 </View>
-                <View style={styles.reminderActions}>
-                  <TouchableOpacity>
-                    <Ionicons name="volume-high" size={20} color="#7F8C8D" />
-                  </TouchableOpacity>
-                  <TouchableOpacity>
-                    <Ionicons name="trash" size={20} color="red" />
-                  </TouchableOpacity>
-                </View>
+                <TouchableOpacity onPress={() => handleDelete(r.id)}>
+                  <Ionicons name="trash" size={22} color="red" />
+                </TouchableOpacity>
               </View>
-            ))
-          )}
-        </View>
-
-        {/* Recordatorios vencidos */}
-        <Text style={styles.sectionTitle}>Recordatorios vencidos</Text>
-        <View style={styles.completedBox}>
-          <Text style={styles.completedText}>• Recordatorio vencido 1</Text>
-          <Text style={styles.completedText}>• Recordatorio vencido 2</Text>
-        </View>
+            );
+          })
+        )}
 
         {/* Botón para agregar nuevo */}
         <TouchableOpacity
@@ -82,8 +148,6 @@ export default function RecordatoriosScreen() {
         >
           <Text style={styles.addButtonText}>+ Agregar Recordatorio</Text>
         </TouchableOpacity>
-
-        
       </ScrollView>
     </SafeAreaView>
   );
@@ -91,8 +155,6 @@ export default function RecordatoriosScreen() {
 
 const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: "#F8F9FA" },
-
-  // HEADER estilo dashboard
   header: {
     backgroundColor: "#fff",
     flexDirection: "row",
@@ -101,19 +163,9 @@ const styles = StyleSheet.create({
     alignItems: "center",
     elevation: 2,
   },
-  logoRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-  },
-  logo: {
-    width: 40,
-    height: 40,
-  },
-  logoText: {
-    color: "#7F8C8D",
-    fontSize: 12,
-  },
+  logoRow: { flexDirection: "row", alignItems: "center", gap: 8 },
+  logo: { width: 40, height: 40 },
+  logoText: { color: "#7F8C8D", fontSize: 12 },
   avatar: {
     width: 32,
     height: 32,
@@ -122,65 +174,46 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-
-  // CONTENIDO PRINCIPAL
-  container: { padding: 16, paddingBottom: 80 },
+  container: { padding: 16, paddingBottom: 100 },
   title: {
-    fontSize: 20,
+    fontSize: 22,
     fontWeight: "bold",
     color: "#2C3E50",
     textAlign: "center",
-    marginBottom: 5,
   },
   subText: {
     textAlign: "center",
     color: "#4A9FD8",
-    fontSize: 12,
-    textDecorationLine: "underline",
-    marginBottom: 20,
+    fontSize: 13,
+    marginVertical: 6,
   },
-  reminderList: { gap: 10 },
+  noReminders: {
+    color: "#7F8C8D",
+    textAlign: "center",
+    marginTop: 30,
+    fontStyle: "italic",
+  },
   reminderCard: {
     backgroundColor: "#fff",
     borderRadius: 12,
-    padding: 12,
+    padding: 14,
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
     borderWidth: 1,
     borderColor: "#E5E7EB",
     elevation: 1,
+    marginBottom: 10,
   },
-  reminderInfo: { flexDirection: "row", gap: 10, alignItems: "center" },
+  reminderInfo: { flexDirection: "row", alignItems: "center" },
   reminderText: { fontWeight: "bold", color: "#2C3E50" },
   reminderTime: { fontSize: 12, color: "#7F8C8D" },
-  reminderActions: { flexDirection: "row", gap: 8 },
-  noReminders: {
-    color: "#7F8C8D",
-    textAlign: "center",
-    marginTop: 10,
-    fontStyle: "italic",
-  },
-  sectionTitle: {
-    fontWeight: "bold",
-    color: "#2C3E50",
-    marginVertical: 15,
-  },
-  completedBox: {
-    backgroundColor: "#00D98E",
-    borderRadius: 12,
-    padding: 15,
-    marginBottom: 20,
-  },
-  completedText: { color: "#fff", marginBottom: 5 },
   addButton: {
     backgroundColor: "#00D98E",
     borderRadius: 12,
     paddingVertical: 14,
     alignItems: "center",
-    marginTop: 10,
+    marginTop: 20,
   },
   addButtonText: { color: "#fff", fontWeight: "bold", fontSize: 16 },
-
- 
 });

@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+// src/screens/NotasScreen.tsx
+import React, { useEffect, useState } from "react";
 import {
   SafeAreaView,
   View,
@@ -7,47 +8,53 @@ import {
   StyleSheet,
   ScrollView,
   Image,
+  Alert,
 } from "react-native";
-import { Ionicons, MaterialIcons } from "@expo/vector-icons";
+import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
+import { supabase } from "../lib/supabaseClient";
 
 export default function NotasScreen() {
   const navigation = useNavigation();
+  const [notas, setNotas] = useState<any[]>([]);
 
-  const [notas] = useState([
-    {
-      id: 1,
-      title: "Te quiero Pa, nos vemos el lunes",
-      date: "10-06-2025",
-      type: "text",
-      color: "#E74C3C", // rojo
-    },
-    {
-      id: 2,
-      title: "Recuerda ir comprar aguacate",
-      date: "10-06-2025",
-      type: "text",
-      color: "#27AE60", // verde
-    },
-    {
-      id: 3,
-      title: "Perejungito",
-      date: "10-06-2025",
-      type: "text",
-      color: "#E67E22", // naranja
-    },
-    {
-      id: 4,
-      title: "Tu nieta te manda saludos",
-      date: "",
-      type: "image",
-      color: "#7F8C8D",
-    },
-  ]);
+  // 🔄 Cargar notas reales del usuario
+  useEffect(() => {
+    const fetchNotas = async () => {
+      const { data: auth } = await supabase.auth.getUser();
+      const userId = auth?.user?.id;
+
+      const { data, error } = await supabase
+        .from("notas")
+        .select("id, titulo, contenido, fecha")
+        .eq("usuario_id", userId)
+        .order("fecha", { ascending: false });
+
+      if (error) {
+        console.error("Error al cargar notas:", error);
+      } else {
+        setNotas(data);
+      }
+    };
+
+    fetchNotas();
+  }, []);
+
+  // 🗑️ Eliminar nota
+  const deleteNota = async (id: number) => {
+    try {
+      const { error } = await supabase.from("notas").delete().eq("id", id);
+      if (error) throw error;
+      setNotas((prev) => prev.filter((n) => n.id !== id));
+      Alert.alert("✅ Nota eliminada");
+    } catch (err) {
+      console.error("Error al eliminar nota:", err);
+      Alert.alert("❌ No se pudo eliminar la nota.");
+    }
+  };
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      {/* Header tipo Dashboard */}
       <View style={styles.header}>
         <View style={styles.logoRow}>
           <Image
@@ -57,7 +64,6 @@ export default function NotasScreen() {
           />
           <Text style={styles.logoText}>Conectados</Text>
         </View>
-
         <TouchableOpacity style={styles.avatar} onPress={() => navigation.goBack()}>
           <Ionicons name="arrow-back" size={18} color="#fff" />
         </TouchableOpacity>
@@ -65,46 +71,26 @@ export default function NotasScreen() {
 
       <ScrollView contentContainerStyle={styles.container}>
         <Text style={styles.title}>NOTAS</Text>
-        <Text style={styles.subtitle}>
-          Caja para escribir un mensaje breve o subir una foto.
-        </Text>
+        <Text style={styles.subtitle}>Mensajes y recordatorios guardados 💬</Text>
 
-        {/* Lista de notas */}
-        <View style={{ marginTop: 20 }}>
-          {notas.map((nota) => (
+        {notas.length === 0 ? (
+          <Text style={styles.noNotas}>No hay notas todavía.</Text>
+        ) : (
+          notas.map((nota) => (
             <View key={nota.id} style={styles.noteCard}>
               <View style={{ flex: 1 }}>
-                <Text style={[styles.noteText, { color: nota.color }]}>
-                  {nota.title}
+                <Text style={styles.noteTitle}>{nota.titulo}</Text>
+                <Text style={styles.noteText}>{nota.contenido}</Text>
+                <Text style={styles.noteDate}>
+                  {new Date(nota.fecha).toLocaleString("es-MX")}
                 </Text>
-                {nota.date ? (
-                  <Text style={styles.noteDate}>{nota.date}</Text>
-                ) : null}
               </View>
-
-              {nota.type === "image" ? (
-                <View style={styles.imagePlaceholder}>
-                  <Ionicons name="image" size={24} color="#7F8C8D" />
-                </View>
-              ) : (
-                <TouchableOpacity>
-                  <Ionicons name="settings" size={22} color="#7F8C8D" />
-                </TouchableOpacity>
-              )}
+              <TouchableOpacity onPress={() => deleteNota(nota.id)}>
+                <Ionicons name="trash" size={22} color="red" />
+              </TouchableOpacity>
             </View>
-          ))}
-        </View>
-
-        {/* Botones de acción */}
-        <View style={{ marginTop: 30 }}>
-          <TouchableOpacity style={styles.actionButton}>
-            <Text style={styles.actionText}>Descargar</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity style={styles.actionButton}>
-            <Text style={styles.actionText}>Concluir</Text>
-          </TouchableOpacity>
-        </View>
+          ))
+        )}
       </ScrollView>
     </SafeAreaView>
   );
@@ -120,11 +106,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     elevation: 2,
   },
-  logoRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-  },
+  logoRow: { flexDirection: "row", alignItems: "center", gap: 8 },
   logo: { width: 40, height: 40 },
   logoText: { color: "#7F8C8D", fontSize: 12 },
   avatar: {
@@ -135,10 +117,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  container: {
-    padding: 16,
-    paddingBottom: 50,
-  },
+  container: { padding: 16, paddingBottom: 50 },
   title: {
     fontSize: 22,
     fontWeight: "bold",
@@ -147,10 +126,13 @@ const styles = StyleSheet.create({
   },
   subtitle: {
     fontSize: 13,
-    color: "#7F8C8D",
+    color: "#4A9FD8",
     textAlign: "center",
     marginTop: 4,
+    marginBottom: 10,
+    textDecorationLine: "underline",
   },
+  noNotas: { textAlign: "center", color: "#7F8C8D", marginTop: 20 },
   noteCard: {
     backgroundColor: "#fff",
     borderRadius: 14,
@@ -159,38 +141,11 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
     marginBottom: 10,
-    shadowColor: "#000",
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
     elevation: 1,
+    borderWidth: 1,
+    borderColor: "#E5E7EB",
   },
-  noteText: {
-    fontWeight: "600",
-    fontSize: 14,
-  },
-  noteDate: {
-    fontSize: 11,
-    color: "#7F8C8D",
-    marginTop: 2,
-  },
-  imagePlaceholder: {
-    width: 60,
-    height: 60,
-    backgroundColor: "#F8F9FA",
-    borderRadius: 10,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  actionButton: {
-    backgroundColor: "#00D98E",
-    borderRadius: 12,
-    paddingVertical: 14,
-    alignItems: "center",
-    marginBottom: 10,
-  },
-  actionText: {
-    color: "#fff",
-    fontWeight: "bold",
-    fontSize: 16,
-  },
+  noteTitle: { fontWeight: "bold", fontSize: 15, color: "#2C3E50" },
+  noteText: { color: "#34495E", marginTop: 4 },
+  noteDate: { fontSize: 11, color: "#7F8C8D", marginTop: 6 },
 });
