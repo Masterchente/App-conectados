@@ -1,21 +1,57 @@
 // src/screens/ElderlyJoin.tsx
+import { Alert } from "react-native";
+import { supabase } from "../lib/supabaseClient";
 import React, { useState } from "react";
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Image } from "react-native";
+import {
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  StyleSheet,
+  Image,
+  KeyboardAvoidingView,
+  Platform,
+} from "react-native";
 import { useNavigation } from "@react-navigation/native";
 
 export default function ElderlyJoin() {
   const navigation = useNavigation();
   const [familyCode, setFamilyCode] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  const handleJoin = () => {
-    // Aquí puedes manejar la lógica de unión con código de familia
-    navigation.navigate("DashboardElderly" as never); // 👈 redirige al Dashboard de adultos mayores
+  const handleJoin = async () => {
+    const code = familyCode.trim().toUpperCase();
+    if (!code) {
+      Alert.alert("Código vacío", "Por favor ingresa un código válido.");
+      return;
+    }
+
+    setLoading(true);
+    const { data: familia, error } = await supabase
+      .from("familias")
+      .select("id, codigo, created_by")
+      .eq("codigo", code)
+      .single();
+    setLoading(false);
+
+    if (error || !familia) {
+      Alert.alert("Código incorrecto", "No se encontró ninguna familia con ese código.");
+      return;
+    }
+
+    Alert.alert(
+      "✅ Conexión exitosa",
+      "Código verificado correctamente.",
+      [{ text: "Ir al panel", onPress: () => navigation.navigate("DashboardElderly" as never) }]
+    );
   };
 
   return (
-    <View style={styles.container}>
+    <KeyboardAvoidingView
+      style={styles.container}
+      behavior={Platform.OS === "ios" ? "padding" : undefined}
+    >
       <View style={styles.card}>
-        {/* Logo */}
         <View style={styles.logoRow}>
           <Image
             source={require("../../assets/logo-conectados.png")}
@@ -25,25 +61,32 @@ export default function ElderlyJoin() {
           <Text style={styles.subtitle}>Conectados</Text>
         </View>
 
-        {/* Título */}
-        <Text style={styles.title}>Unirse</Text>
+        <Text style={styles.title}>Unirse a una Familia</Text>
 
-        {/* Input del código */}
         <TextInput
-          placeholder="Introduce el código de la familia"
+          placeholder="Introduce el código de familia"
           value={familyCode}
           onChangeText={setFamilyCode}
-          multiline
-          numberOfLines={4}
+          autoCapitalize="characters"
+          maxLength={8}
           style={styles.textArea}
         />
 
-        {/* Botón */}
-        <TouchableOpacity style={styles.button} onPress={handleJoin}>
-          <Text style={styles.buttonText}>Iniciar</Text>
+        <TouchableOpacity
+          style={[styles.button, loading && { opacity: 0.7 }]}
+          onPress={handleJoin}
+          disabled={loading}
+        >
+          <Text style={styles.buttonText}>
+            {loading ? "Verificando..." : "Unirme"}
+          </Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity onPress={() => navigation.goBack()}>
+          <Text style={styles.backText}>← Regresar</Text>
         </TouchableOpacity>
       </View>
-    </View>
+    </KeyboardAvoidingView>
   );
 }
 
@@ -61,51 +104,35 @@ const styles = StyleSheet.create({
     backgroundColor: "#fff",
     borderRadius: 24,
     padding: 20,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 6,
     elevation: 6,
   },
-  logoRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 20,
-    gap: 10,
-  },
-  logo: {
-    width: 50,
-    height: 50,
-  },
-  subtitle: {
-    fontSize: 14,
-    color: "#7F8C8D",
-  },
+  logoRow: { flexDirection: "row", alignItems: "center", marginBottom: 20, gap: 10 },
+  logo: { width: 50, height: 50 },
+  subtitle: { fontSize: 14, color: "#7F8C8D" },
   title: {
-    fontSize: 26,
+    fontSize: 24,
     fontWeight: "bold",
     textAlign: "center",
     color: "#2C3E50",
-    marginBottom: 30,
+    marginBottom: 20,
   },
   textArea: {
     borderWidth: 1,
     borderColor: "#E1E8ED",
     borderRadius: 12,
     padding: 12,
-    fontSize: 14,
-    textAlignVertical: "top",
+    fontSize: 16,
     marginBottom: 20,
+    textAlign: "center",
+    letterSpacing: 2,
   },
   button: {
     backgroundColor: "#00D98E",
     paddingVertical: 14,
     borderRadius: 12,
     alignItems: "center",
+    marginBottom: 10,
   },
-  buttonText: {
-    color: "#fff",
-    fontWeight: "bold",
-    fontSize: 18,
-  },
+  buttonText: { color: "#fff", fontWeight: "bold", fontSize: 18 },
+  backText: { color: "#4A9FD8", textAlign: "center", fontSize: 14, marginTop: 10 },
 });

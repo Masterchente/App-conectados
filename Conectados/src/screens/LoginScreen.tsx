@@ -1,4 +1,6 @@
 // src/screens/LoginScreen.tsx
+import { Alert } from "react-native";
+import { supabase } from "../lib/supabaseClient";
 import React, { useState } from "react";
 import { View, Text, TextInput, TouchableOpacity, Image, StyleSheet, ScrollView } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
@@ -9,9 +11,36 @@ export default function LoginScreen() {
   const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState({ email: "", password: "" });
 
-  const handleLogin = () => {
-    navigation.navigate("DashboardFamiliar" as never);
-  };
+const handleLogin = async () => {
+  try {
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email: formData.email,
+      password: formData.password,
+    });
+
+    if (error) {
+      Alert.alert("Error", error.message);
+      return;
+    }
+
+    const user = data.user;
+
+    const { data: perfil } = await supabase
+      .from("usuarios")
+      .select("rol")
+      .eq("id", user.id)
+      .single();
+
+    if (perfil?.rol === "familiar") {
+      navigation.navigate("DashboardFamiliar" as never);
+    } else {
+      navigation.navigate("DashboardElderly" as never);
+    }
+  } catch (err) {
+    Alert.alert("Error inesperado", String(err));
+  }
+};
+
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
@@ -68,8 +97,19 @@ export default function LoginScreen() {
           onPress={() => navigation.navigate("ElderlyJoin" as never)}
           style={styles.button}
         >
+        
+
           <Text style={styles.buttonText}>Soy un adulto mayor</Text>
         </TouchableOpacity>
+
+        {/* Botón para registrar adulto mayor */}
+        <TouchableOpacity
+          onPress={() => navigation.navigate("RegisterElderly" as never)}
+          style={[styles.button, { backgroundColor: "#4A9FD8" }]}
+        >
+          <Text style={styles.buttonText}>Registrar adulto mayor</Text>
+        </TouchableOpacity>
+        
       </View>
     </ScrollView>
   );
@@ -120,7 +160,7 @@ const styles = StyleSheet.create({
     right: 15,
   },
   button: {
-    backgroundColor: "#00D98E",
+    backgroundColor: "#3CC19B",
     borderRadius: 12,
     paddingVertical: 14,
     alignItems: "center",
