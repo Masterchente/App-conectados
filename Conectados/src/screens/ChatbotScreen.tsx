@@ -161,27 +161,135 @@ export default function ChatbotScreen() {
         }
       }
 
-      // 💬 CONVERSACIONES NORMALES
-      if (msg.includes("hola") || msg.includes("buen")) {
-        const saludos = [
-          "¡Hola! 😊 Qué gusto verte de nuevo.",
-          "¡Hola! ¿Cómo te encuentras hoy?",
-          "Hola 👋, espero que tengas un lindo día.",
-        ];
-        return saludos[Math.floor(Math.random() * saludos.length)];
-      }
+      // 💬 CONVERSACIONES NORMALES — más naturales y flexibles
+if (
+  msg.includes("hola") ||
+  msg.includes("buenas") ||
+  msg.includes("holi") ||
+  msg.includes("hey") ||
+  msg.includes("saludos")
+) {
+  const saludos = [
+    "¡Hola! 😊 Qué gusto verte de nuevo.",
+    "¡Hola, hola! ¿Cómo has estado últimamente?",
+    "Hey 👋 ¿cómo va tu día?",
+    "¡Qué alegría verte por aquí otra vez!",
+    "Hola 👋 espero que tu día esté lleno de cosas buenas 💙",
+    "¡Buenas! 🌞 ¿cómo te sientes hoy?",
+  ];
+  return saludos[Math.floor(Math.random() * saludos.length)];
+}
 
-      if (msg.includes("cómo estás")) {
-        return "Estoy muy bien, gracias por preguntar 💙 ¿Y tú cómo te sientes hoy?";
-      }
+if (
+  msg.includes("cómo estás") ||
+  msg.includes("como estas") ||
+  msg.includes("que tal") ||
+  msg.includes("como andas") ||
+  msg.includes("cómo te va") ||
+  msg.includes("como te va")
+) {
+  const respuestas = [
+    "Estoy muy bien 💙 gracias por preguntar, ¿y tú?",
+    "¡Todo genial! Tratando de hacer mi mejor versión cada día 😄 ¿tú qué tal?",
+    "Muy bien 😊 hoy me siento con buena energía. ¿Tú cómo andas?",
+    "Todo tranquilo por aquí 💫 ¿y tú, cómo va tu día?",
+    "Estoy bien, gracias 💙 me alegra que lo preguntes.",
+  ];
+  return respuestas[Math.floor(Math.random() * respuestas.length)];
+}
 
-      if (msg.includes("gracias")) {
-        return "¡De nada! 😊 Estoy aquí para ayudarte.";
-      }
+if (
+  msg.includes("qué haces") ||
+  msg.includes("que haces") ||
+  msg.includes("haciendo") ||
+  msg.includes("ocupado") ||
+  msg.includes("en qué estás") ||
+  msg.includes("en que estás")
+) {
+  const respuestas = [
+    "Aquí, esperando poder ayudarte 😎",
+    "Nada especial, solo listo para platicar contigo 💬",
+    "Estoy organizando mis datos 🤓 y pensando en café ☕",
+    "Viendo si alguien necesita que le recuerde algo 🕒",
+    "Solo practicando cómo ser el mejor bot del mundo 💪",
+  ];
+  return respuestas[Math.floor(Math.random() * respuestas.length)];
+}
 
-      if (msg.includes("adiós") || msg.includes("bye")) {
-        return "Hasta pronto 👋 ¡Cuídate mucho!";
-      }
+if (
+  msg.includes("gracias") ||
+  msg.includes("te agradezco") ||
+  msg.includes("mil gracias") ||
+  msg.includes("gracioso")
+) {
+  const respuestas = [
+    "¡De nada! 😊",
+    "Para eso estoy 💙",
+    "¡Qué amable! Gracias a ti por confiar en mí 💫",
+    "Siempre es un gusto ayudarte 😄",
+    "Cuando quieras, estoy aquí 👋",
+  ];
+  return respuestas[Math.floor(Math.random() * respuestas.length)];
+}
+
+if (
+  msg.includes("adiós") ||
+  msg.includes("bye") ||
+  msg.includes("nos vemos") ||
+  msg.includes("hasta luego") ||
+  msg.includes("chao") ||
+  msg.includes("me voy")
+) {
+  const despedidas = [
+    "Hasta pronto 👋 ¡Cuídate mucho!",
+    "Nos vemos pronto 💙",
+    "Que tengas un excelente día 🌞",
+    "Adiós 👋 recuerda hidratarte y sonreír 😄",
+    "Hasta luego 💫 ¡no olvides tus pendientes!",
+  ];
+  return despedidas[Math.floor(Math.random() * despedidas.length)];
+}
+
+if (
+  msg.includes("te quiero") ||
+  msg.includes("te amo") ||
+  msg.includes("me caes bien") ||
+  msg.includes("eres genial")
+) {
+  const respuestas = [
+    "Aww 💙 gracias, eso me alegra mucho.",
+    "Yo también te tengo cariño 🤗",
+    "¡Qué bonito! 💫 Gracias por decirlo.",
+    "Tú también eres genial 😄",
+  ];
+  return respuestas[Math.floor(Math.random() * respuestas.length)];
+}
+
+if (
+  msg.includes("qué puedes hacer") ||
+  msg.includes("que puedes hacer") ||
+  msg.includes("qué sabes hacer") ||
+  msg.includes("que sabes hacer")
+) {
+  return "Puedo ayudarte a crear recordatorios ⏰, agregar notas 📝, o simplemente platicar contigo 💬. ¿Qué quieres hacer hoy?";
+}
+
+if (
+  msg.includes("cuéntame algo") ||
+  msg.includes("dime algo") ||
+  msg.includes("chiste") ||
+  msg.includes("aburrido") ||
+  msg.includes("aburrida")
+) {
+  const chistes = [
+    "¿Sabías que los humanos pasan 1/3 de su vida durmiendo? 😴 Yo no, porque nunca duermo 😎",
+    "¿Qué hace una abeja en el gimnasio? ¡Zum-ba! 🐝😂",
+    "¿Por qué el libro de matemáticas estaba triste? Porque tenía muchos problemas 📘😅",
+    "¿Sabías que reír 10 minutos al día mejora tu memoria? 😄 ¡Así que ríete conmigo un rato!",
+    "Yo antes era un chatbot tímido, pero ahora ya me conecto con todos 😏",
+  ];
+  return chistes[Math.floor(Math.random() * chistes.length)];
+}
 
       // 🪄 Fallback
       const respuestas = [
